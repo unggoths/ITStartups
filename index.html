@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>FocusPact прототип</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: guide panel on the left, a Telegram-style phone on the right; stacks on phones. */
+:root{
+  --page:#E9EDF2; --ink:#16202B; --muted:#5C6B7A; --line:#D3DAE2; --card:#F8FAFC;
+  --ember:#E8572A; --ember-soft:#FFE6DA; --ok:#2E9E5B; --bad:#C2413A;
+  --chat:#CFDCE6; --in:#FFFFFF; --out:#FFE4D6; --btn:rgba(255,255,255,.78); --btn-fg:#1F6FB5;
+  --bar:#FFFFFF; --bar-fg:#16202B; --meta:#8A97A4; --link:#1F6FB5;
+  --f-ui:'Onest',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --f-display:'Unbounded','Onest',system-ui,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --page:#0D1218; --ink:#E6ECF2; --muted:#93A2B1; --line:#253240; --card:#141C25;
+  --ember:#FF7A45; --ember-soft:#3B2317; --ok:#4CC27E; --bad:#F06C63;
+  --chat:#0E1621; --in:#182533; --out:#4A2A1C; --btn:rgba(30,46,62,.92); --btn-fg:#7CC4FF;
+  --bar:#17212B; --bar-fg:#E6ECF2; --meta:#7B8B9A; --link:#7CC4FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --page:#0D1218; --ink:#E6ECF2; --muted:#93A2B1; --line:#253240; --card:#141C25;
+  --ember:#FF7A45; --ember-soft:#3B2317; --ok:#4CC27E; --bad:#F06C63;
+  --chat:#0E1621; --in:#182533; --out:#4A2A1C; --btn:rgba(30,46,62,.92); --btn-fg:#7CC4FF;
+  --bar:#17212B; --bar-fg:#E6ECF2; --meta:#7B8B9A; --link:#7CC4FF; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 16px 40px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:40px;align-items:start}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr);gap:24px}.guide{order:2}.stage{order:1}}
+
+/* guide */
+.guide{display:flex;flex-direction:column;gap:22px;min-width:0;position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px)}
+@media (max-width:900px){.guide{position:static}}
+.brand{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ember);font-weight:600}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,4vw,44px);line-height:1.05;margin:0;text-wrap:balance}
+.lead{color:var(--muted);max-width:52ch;margin:0}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+.steps .n{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.steps b{display:block;color:var(--ink);font-weight:600}
+.steps li.on .n{background:var(--ember);border-color:var(--ember);color:#fff}
+.steps li.done .n{background:var(--ember-soft);border-color:var(--ember-soft);color:var(--ember)}
+.steps li.on b{color:var(--ember)}
+.hyp{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.hyp h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin:0;color:var(--muted);font-weight:600}
+.hyp p{margin:0}
+.tools{display:flex;gap:10px;flex-wrap:wrap}
+.ghost{font:inherit;font-size:14px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer}
+.ghost:hover{border-color:var(--ember);color:var(--ember)}
+
+/* stage + phone */
+.stage{display:flex;flex-direction:column;gap:12px;align-items:center;min-width:0}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px;max-width:100%;overflow-x:auto}
+.seg button{font:inherit;font-size:13px;font-weight:500;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;position:relative}
+.seg button[aria-selected="true"]{background:var(--ember);color:#fff}
+.seg .dot{position:absolute;top:3px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--ember);border:2px solid var(--card)}
+.phone{width:100%;max-width:390px;height:min(780px,calc(100vh - 110px));min-height:560px;border-radius:38px;background:var(--bar);border:10px solid #1B232C;box-shadow:0 30px 60px -30px rgba(10,20,30,.45);overflow:hidden;display:flex;flex-direction:column;position:relative}
+@media (max-width:440px){.phone{border-width:6px;border-radius:28px;height:calc(100vh - 90px)}}
+.view{display:flex;flex-direction:column;flex:1;min-height:0}
+.head{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bar);color:var(--bar-fg);border-bottom:1px solid var(--line)}
+.ava{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex:none}
+.head .t{font-weight:600;line-height:1.2}
+.head .s{font-size:12.5px;color:var(--meta)}
+.chat{flex:1;overflow-y:auto;padding:12px 10px 8px;display:flex;flex-direction:column;gap:6px;background:var(--chat);
+  background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.07) 0 2px,transparent 3px),radial-gradient(circle at 70% 80%,rgba(255,255,255,.06) 0 2px,transparent 3px);background-size:46px 46px}
+.day{align-self:center;font-size:12px;background:rgba(0,0,0,.18);color:#fff;padding:2px 10px;border-radius:999px;margin:4px 0}
+.msg{max-width:84%;display:flex;flex-direction:column;gap:4px;animation:pop .22s ease-out}
+.msg.me{align-self:flex-end}
+.bub{background:var(--in);color:var(--ink);padding:7px 10px 5px;border-radius:14px 14px 14px 4px;box-shadow:0 1px 1px rgba(0,0,0,.08);overflow-wrap:anywhere}
+.me .bub{background:var(--out);border-radius:14px 14px 4px 14px}
+.bub .who{font-size:13px;font-weight:600;margin-bottom:1px}
+.bub .tm{float:right;font-size:11px;color:var(--meta);margin:6px 0 0 10px}
+.bub p{margin:0 0 4px}
+.kb{display:grid;grid-template-columns:1fr;gap:4px}
+.kb.two{grid-template-columns:1fr 1fr}
+.kb button{font:inherit;font-size:14px;font-weight:500;border:0;background:var(--btn);color:var(--btn-fg);padding:9px 8px;border-radius:10px;cursor:pointer;backdrop-filter:blur(4px)}
+.kb button:hover:not(:disabled){filter:brightness(1.05);outline:1px solid var(--btn-fg)}
+.kb button:disabled{opacity:.45;cursor:default}
+.kb button.picked{opacity:1;outline:2px solid var(--btn-fg)}
+.typing{align-self:flex-start;background:var(--in);padding:10px 14px;border-radius:14px;display:flex;gap:4px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--meta);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.react{display:flex;gap:4px;flex-wrap:wrap}
+.react span{font-size:12.5px;background:var(--btn);color:var(--btn-fg);padding:1px 8px;border-radius:999px}
+.foot{padding:8px 10px;background:var(--bar);border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.foot input{flex:1;min-width:0;font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 14px}
+.foot .send{border:0;background:var(--ember);color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:16px;flex:none}
+.foot .wide{flex:1;font:inherit;font-weight:600;border:0;background:var(--ember);color:#fff;padding:10px;border-radius:12px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+
+/* pact + reward cards inside bubbles */
+.card{border-radius:10px;background:var(--ember-soft);padding:10px 12px;display:flex;flex-direction:column;gap:6px;margin:2px 0 4px}
+.card h4{margin:0;font-size:14px;font-family:var(--f-display);font-weight:500;color:var(--ember)}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.row span:first-child{color:var(--muted)}
+.row span:last-child{text-align:right;font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--in);color:var(--ink);font-variant-numeric:tabular-nums}
+.chip.ok{color:var(--ok)}.chip.bad{color:var(--bad)}
+.proof{max-width:100%;border-radius:10px;display:block}
+.demoimg{width:220px;max-width:100%;aspect-ratio:4/3;border-radius:10px;background:repeating-linear-gradient(#fff 0 17px,#c9d6e3 17px 18px);position:relative;overflow:hidden;border:1px solid #d6dde5}
+.demoimg:before{content:"Розділ 2. Аналіз ринку";position:absolute;left:14px;top:10px;font-size:12px;font-weight:700;color:#233}
+.demoimg:after{content:"стор. 14–15";position:absolute;right:10px;bottom:6px;font-size:11px;color:#667}
+.check{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.check .ok{color:var(--ok);font-weight:600}
+.toast{position:absolute;left:10px;right:10px;top:10px;background:var(--bar);color:var(--bar-fg);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35);display:flex;gap:10px;align-items:center;cursor:pointer;z-index:5;animation:drop .25s ease-out}
+.toast .ava{width:32px;height:32px;font-size:13px}
+.toast small{display:block;color:var(--meta)}
+
+/* mini app */
+.app{flex:1;overflow-y:auto;background:var(--card);padding:14px;display:flex;flex-direction:column;gap:14px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--bar);border-top:1px solid var(--line)}
+.tabs button{font:inherit;font-size:12px;border:0;background:transparent;color:var(--meta);padding:9px 2px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tabs button span{font-size:18px;line-height:1}
+.tabs button[aria-selected="true"]{color:var(--ember);font-weight:600}
+.panel{background:var(--bar);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.panel h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hero{display:flex;gap:14px;align-items:center}
+.hero .nm{font-family:var(--f-display);font-weight:700;font-size:18px}
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ember);border-radius:999px;transition:width .8s ease}
+.bar.hp i{background:linear-gradient(90deg,var(--bad),var(--ember))}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.stat small{color:var(--muted);font-size:12px}
+.list{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.li:last-child{border-bottom:0}
+.li.you{background:var(--ember-soft);margin:0 -14px;padding:9px 14px}
+.li .pos{color:var(--muted);font-weight:600;text-align:center}
+.shop{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item{background:var(--bar);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.item .pt{font-size:12px;color:var(--muted)}
+.item b{font-size:14px;line-height:1.25}
+.item button{margin-top:auto;font:inherit;font-size:13px;font-weight:600;border:0;border-radius:10px;padding:8px;background:var(--ember);color:#fff;cursor:pointer}
+.item button:disabled{background:var(--line);color:var(--muted);cursor:default}
+.code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(--ember-soft);color:var(--ember);padding:6px;border-radius:8px;text-align:center;font-weight:700}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+
+/* feedback */
+.fb{flex:1;overflow-y:auto;background:var(--card);padding:16px;display:flex;flex-direction:column;gap:16px}
+.q{display:flex;flex-direction:column;gap:8px}
+.q b{font-size:14.5px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts button{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--bar);color:var(--ink);padding:7px 12px;border-radius:999px;cursor:pointer}
+.opts button[aria-pressed="true"]{background:var(--ember);border-color:var(--ember);color:#fff}
+.fb textarea{font:inherit;border:1px solid var(--line);background:var(--bar);color:var(--ink);border-radius:12px;padding:10px;min-height:70px;resize:vertical}
+.fb .wide{font:inherit;font-weight:600;border:0;background:var(--ember);color:#fff;padding:11px;border-radius:12px;cursor:pointer}
+.sum{background:var(--bar);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13.5px;white-space:pre-wrap}
+
+@keyframes pop{from{transform:translateY(6px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes drop{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <aside class="guide">
+    <div class="brand">
+      <span class="eyebrow">Інтерактивний прототип · Лабораторна №2</span>
+      <h1>FocusPact</h1>
+      <p class="lead">Telegram-бот, у якому ти укладаєш пакт із друзями, підтверджуєш виконання доказом і отримуєш нагороду. Якщо не встигнеш, друзі про це дізнаються. Пройди сценарій у телефоні праворуч, це займе 2–3 хвилини.</p>
+    </div>
+    <ol class="steps" id="steps">
+      <li data-s="1"><span class="n">1</span><div><b>Укласти пакт</b>Ціль, дедлайн, доказ, свідок. Засікаємо, скільки це займе.</div></li>
+      <li data-s="2"><span class="n">2</span><div><b>Оголосити друзям</b>Пакт з'являється в груповому чаті загону.</div></li>
+      <li data-s="3"><span class="n">3</span><div><b>Надіслати доказ</b>Фото чи скриншот, перевірка штучним інтелектом.</div></li>
+      <li data-s="4"><span class="n">4</span><div><b>Нагорода або наслідки</b>XP, серія днів, удар по босу чи жартівливий звіт.</div></li>
+      <li data-s="5"><span class="n">5</span><div><b>Mini App і відгук</b>Персонаж, загін, ліга, нагороди партнерів. Три питання про ідею.</div></li>
+    </ol>
+    <div class="hyp">
+      <h2>Що перевіряємо</h2>
+      <p>Людина доводить справу до кінця частіше, коли пообіцяла її друзям і має показати доказ, ніж коли просто ставить галочку в трекері.</p>
+    </div>
+    <div class="tools">
+      <button class="ghost" id="restart" type="button">Почати спочатку</button>
+    </div>
+  </aside>
+
+  <section class="stage" aria-label="Прототип у телефоні">
+    <div class="seg" role="tablist" id="seg">
+      <button role="tab" data-v="bot" aria-selected="true">Бот</button>
+      <button role="tab" data-v="group" aria-selected="false">Загін</button>
+      <button role="tab" data-v="app" aria-selected="false">Mini App</button>
+      <button role="tab" data-v="fb" aria-selected="false">Відгук</button>
+    </div>
+    <div class="phone" id="phone">
+      <!-- bot chat -->
+      <div class="view" id="v-bot">
+        <div class="head"><div class="ava" style="background:var(--ember)">FP</div><div><div class="t">FocusPact</div><div class="s">бот · допомагає доводити справи до кінця</div></div></div>
+        <div class="chat" id="c-bot"></div>
+        <div class="foot" id="f-bot"><input id="botInput" placeholder="Напиши свою ціль…" autocomplete="off" disabled><button class="send" id="botSend" aria-label="Надіслати" disabled>➤</button></div>
+      </div>
+      <!-- group chat -->
+      <div class="view" id="v-group" hidden>
+        <div class="head"><div class="ava" style="background:#5B7FD6">НС</div><div><div class="t">Нічні сови 🦉</div><div class="s">4 учасники · FocusPact-загін</div></div></div>
+        <div class="chat" id="c-group"></div>
+        <div class="foot" id="f-group"><input id="grpInput" placeholder="Повідомлення" disabled></div>
+      </div>
+      <!-- mini app -->
+      <div class="view" id="v-app" hidden>
+        <div class="head"><div class="ava" style="background:var(--ember)">FP</div><div><div class="t">FocusPact</div><div class="s">mini app</div></div></div>
+        <div class="app" id="appBody"></div>
+        <div class="tabs" role="tablist" id="appTabs">
+          <button data-t="me" aria-selected="true"><span>🙂</span>Профіль</button>
+          <button data-t="squad" aria-selected="false"><span>⚔️</span>Загін</button>
+          <button data-t="league" aria-selected="false"><span>🏆</span>Ліга</button>
+          <button data-t="shop" aria-selected="false"><span>🎁</span>Нагороди</button>
+        </div>
+      </div>
+      <!-- feedback -->
+      <div class="view" id="v-fb" hidden>
+        <div class="head"><div class="ava" style="background:var(--ok)">?</div><div><div class="t">Твій відгук</div><div class="s">3 питання · 30 секунд</div></div></div>
+        <div class="fb" id="fbBody"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const sleep=ms=>{const g=runId;return new Promise(r=>setTimeout(()=>{if(g===runId)r()},ms))};
+const FAST=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const FRIENDS={
+  'Оля':{c:'#D9577F'}, 'Макс':{c:'#3E9E8F'}, 'Ігор':{c:'#8C6AD1'}, 'FocusPact':{c:'var(--ember)'}
+};
+let S, runId=0;
+function fresh(){return{xp:340,xpNext:500,level:4,karma:42,streak:6,boss:62,mood:'ok',pact:null,t0:null,outcome:null,step:1,view:'bot',tab:'me',codes:{},fb:{}}}
+
+/* ---------- chat primitives ---------- */
+function now(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
+function scroll(el){el.scrollTop=el.scrollHeight}
+function addMsg(chat,{from,html,me,kb,two}){
+  const box=$('#c-'+chat);
+  const m=document.createElement('div');m.className='msg'+(me?' me':'');
+  const who=(chat==='group'&&from&&!me)?`<div class="who" style="color:${FRIENDS[from]?.c||'var(--link)'}">${esc(from)}</div>`:'';
+  m.innerHTML=`<div class="bub">${who}${html}<span class="tm">${now()}</span></div>`;
+  if(kb){
+    const k=document.createElement('div');k.className='kb'+(two?' two':'');
+    kb.forEach(b=>{const x=document.createElement('button');x.type='button';x.textContent=b.t;x.onclick=()=>{k.querySelectorAll('button').forEach(y=>y.disabled=true);x.classList.add('picked');b.go()};k.appendChild(x)});
+    m.appendChild(k);
+  }
+  box.appendChild(m);scroll(box);
+  if(chat!==S.view)badge(chat,true);
+  return m;
+}
+async function say(chat,from,html,opts={}){
+  const box=$('#c-'+chat);
+  const t=document.createElement('div');t.className='typing';t.innerHTML='<i></i><i></i><i></i>';
+  box.appendChild(t);scroll(box);
+  await sleep(FAST?50:(opts.wait??700));
+  t.remove();
+  return addMsg(chat,{from,html,...opts});
+}
+function me(chat,text){addMsg(chat,{me:true,html:`<p>${esc(text)}</p>`})}
+function badge(v,on){const b=document.querySelector(`#seg [data-v="${v}"]`);let d=b.querySelector('.dot');if(on&&!d){d=document.createElement('span');d.className='dot';b.appendChild(d)}if(!on&&d)d.remove()}
+function toast(chat,from,text){
+  document.querySelector('.toast')?.remove();
+  const t=document.createElement('div');t.className='toast';
+  t.innerHTML=`<div class="ava" style="background:${chat==='group'?'#5B7FD6':'var(--ember)'}">${chat==='group'?'НС':'FP'}</div><div><b>${chat==='group'?'Нічні сови':'FocusPact'}</b><small>${esc(from)}: ${esc(text)}</small></div>`;
+  t.onclick=()=>{show(chat);t.remove()};
+  $('#phone').appendChild(t);setTimeout(()=>t.remove(),4200);
+}
+function setStep(n){S.step=Math.max(S.step,n);document.querySelectorAll('#steps li').forEach(li=>{const s=+li.dataset.s;li.classList.toggle('on',s===n);li.classList.toggle('done',s<n)})}
+
+/* ---------- views ---------- */
+function show(v){
+  S.view=v;
+  ['bot','group','app','fb'].forEach(x=>{$('#v-'+x).hidden=x!==v;document.querySelector(`#seg [data-v="${x}"]`).setAttribute('aria-selected',x===v)});
+  badge(v,false);
+  if(v==='app')renderApp();
+  if(v==='fb')renderFb();
+  if((v==='app'||v==='fb')&&S.outcome)setStep(5);
+}
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* ---------- bot flow ---------- */
+function input(on,cb){
+  const i=$('#botInput'),s=$('#botSend');i.disabled=s.disabled=!on;i.value='';
+  const fire=()=>{const v=i.value.trim();if(!v)return;input(false);cb(v)};
+  s.onclick=fire;i.onkeydown=e=>{if(e.key==='Enter')fire()};
+}
+async function start(){
+  setStep(1);
+  $('#c-bot').insertAdjacentHTML('beforeend','<div class="day">Сьогодні</div>');
+  await say('bot','FocusPact','<p>Привіт! Я FocusPact 👋</p><p>Скажи, що хочеш зробити сьогодні. Я оголошу це твоєму загону, а ввечері перевірю результат. Займе близько 30 секунд.</p>',{kb:[{t:'🎯 Укласти пакт',go:askTask}]});
+}
+async function askTask(){
+  S.t0=Date.now();S.pact={};me('bot','🎯 Укласти пакт');
+  await say('bot','FocusPact','<p><b>Що зробиш?</b> Обери варіант або напиши свій.</p>',{kb:[
+    {t:'📝 Написати 2 сторінки курсової',go:()=>setTask('Написати 2 сторінки курсової')},
+    {t:'🇬🇧 30 хв англійської',go:()=>setTask('30 хв англійської')},
+    {t:'🏋️ Тренування 40 хв',go:()=>setTask('Тренування 40 хв')},
+    {t:'💻 Доробити фічу й закомітити',go:()=>setTask('Доробити фічу й закомітити')}]});
+  input(true,v=>{document.querySelectorAll('#c-bot .kb button').forEach(b=>b.disabled=true);setTask(v)});
+}
+async function setTask(t){
+  input(false);S.pact.task=t;me('bot',t);
+  await say('bot','FocusPact','<p><b>До коли?</b></p>',{two:true,kb:[
+    {t:'Сьогодні до 20:00',go:()=>setDl('сьогодні до 20:00')},
+    {t:'Через 1 годину',go:()=>setDl('через 1 годину')},
+    {t:'Сьогодні до 23:00',go:()=>setDl('сьогодні до 23:00')},
+    {t:'Завтра до 10:00',go:()=>setDl('завтра до 10:00')}]});
+}
+async function setDl(d){
+  S.pact.dl=d;me('bot',d[0].toUpperCase()+d.slice(1));
+  await say('bot','FocusPact','<p><b>Чим підтвердиш?</b></p>',{kb:[
+    {t:'📷 Фото результату',go:()=>setProof('фото')},
+    {t:'🖥 Скриншот екрана',go:()=>setProof('скриншот')},
+    {t:'📄 Документ або посилання',go:()=>setProof('документ')}]});
+}
+async function setProof(p){
+  S.pact.proof=p;me('bot',p[0].toUpperCase()+p.slice(1));
+  await say('bot','FocusPact','<p><b>Хто перевірить доказ?</b></p>',{kb:[
+    {t:'🤖 AI-перевірка (миттєво)',go:()=>setWit('AI')},
+    {t:'👤 Друг-свідок: Оля',go:()=>setWit('Оля')}]});
+}
+async function setWit(w){
+  S.pact.wit=w;me('bot',w==='AI'?'AI-перевірка':'Свідок: Оля');
+  await say('bot','FocusPact','<p><b>Якщо не встигнеш, надіслати в чат загону жартівливий звіт?</b></p><p class="note">Усі учасники «Нічних сов» заздалегідь погодилися на такі звіти.</p>',{kb:[
+    {t:'😅 Так, це мене підстьобне',go:()=>setShame(true)},
+    {t:'🙅 Без звітів, лише обнулити серію',go:()=>setShame(false)}]});
+}
+async function setShame(v){
+  S.pact.shame=v;me('bot',v?'Так, надсилай':'Без звітів');
+  const sec=Math.max(1,Math.round((Date.now()-S.t0)/1000));S.pact.sec=sec;
+  const p=S.pact;
+  await say('bot','FocusPact',`<div class="card"><h4>Пакт укладено 🤝</h4>
+    <div class="row"><span>Ціль</span><span>${esc(p.task)}</span></div>
+    <div class="row"><span>Дедлайн</span><span>${esc(p.dl)}</span></div>
+    <div class="row"><span>Доказ</span><span>${esc(p.proof)}</span></div>
+    <div class="row"><span>Перевіряє</span><span>${p.wit==='AI'?'AI':'Оля'}</span></div>
+    <div class="row"><span>Якщо провал</span><span>${p.shame?'серія = 0 + звіт у чат':'серія = 0'}</span></div>
+    <div class="chips"><span class="chip ok">+50 XP</span><span class="chip ok">+1 до серії 🔥</span><span class="chip ok">−8 HP босу</span></div></div>
+    <p>⏱ Ти уклав пакт за <b>${sec} с</b>. Оголошую в чаті «Нічні сови»…</p>`,{wait:900,kb:[{t:'👀 Подивитися, що кажуть друзі',go:()=>show('group')}]});
+  announce();
+}
+async function announce(){
+  setStep(2);
+  const p=S.pact;
+  await sleep(FAST?0:600);
+  await say('group','FocusPact',`<p>🤝 <b>Андрій уклав пакт</b></p><p>«${esc(p.task)}», ${esc(p.dl)}. Доказ: ${esc(p.proof)}. Перевіряє: ${p.wit==='AI'?'AI':'Оля'}.</p><div class="react"><span>💪 1</span></div>`,{wait:300});
+  if(S.view!=='group')toast('group','FocusPact','Андрій уклав пакт');
+  await say('group','Оля','<p>О, нарешті курсова 😄 Тримаю кулачки!</p>',{wait:1400});
+  await say('group','Макс','<p>Якщо встигнеш, я теж сідаю за свій звіт. Домовились?</p>',{wait:1600});
+  await say('group','Ігор','<p>Бос тижня вже тремтить ⚔️</p>',{wait:1300});
+  if(S.outcome===null){
+    addMsg('group',{html:'<p class="note">Демо: у реальному житті тут минуло б кілька годин.</p>',kb:[{t:'⏩ Перемотати до дедлайну',go:deadline}]});
+  }
+}
+async function deadline(){
+  setStep(3);show('bot');
+  await say('bot','FocusPact',`<p>⏰ <b>До дедлайну 15 хвилин.</b></p><p>«${esc(S.pact.task)}». Надішли ${esc(S.pact.proof)}, і я зарахую пакт.</p>`,{kb:[
+    {t:'📎 Завантажити свій файл',go:pickFile},
+    {t:'🖼 Використати демо-доказ',go:()=>sendProof(null)},
+    {t:'😩 Я не встиг',go:fail}]});
+}
+function pickFile(){
+  const f=document.createElement('input');f.type='file';f.accept='image/*,.pdf,.doc,.docx';
+  f.onchange=()=>{const file=f.files[0];if(!file){sendProof(null);return}
+    if(file.type.startsWith('image/')){const r=new FileReader();r.onload=()=>sendProof({img:r.result,name:file.name});r.readAsDataURL(file)}
+    else sendProof({name:file.name})};
+  f.oncancel=()=>sendProof(null);
+  f.click();
+}
+async function sendProof(file){
+  const box=file?.img?`<img class="proof" src="${file.img}" alt="Твій доказ">`:file?`<p>📄 ${esc(file.name)}</p>`:'<div class="demoimg" role="img" aria-label="Фото двох сторінок курсової"></div>';
+  addMsg('bot',{me:true,html:box});
+  if(S.pact.wit==='AI'){
+    const m=await say('bot','FocusPact','<div class="check" id="chk"><span>🔍 Розпізнаю вміст…</span></div>',{wait:500});
+    const c=m.querySelector('#chk');
+    for(const line of ['📐 Шукаю ознаки виконання…','🎯 Порівнюю з ціллю пакту…']){await sleep(FAST?50:900);c.insertAdjacentHTML('beforeend',`<span>${line}</span>`);scroll($('#c-bot'))}
+    await sleep(FAST?50:900);
+    c.insertAdjacentHTML('beforeend',`<span class="ok">✅ Доказ прийнято: результат відповідає цілі «${esc(S.pact.task)}»</span>`);
+  } else {
+    await say('bot','FocusPact','<p>Надіслав доказ Олі на перевірку 👀</p>',{wait:500});
+    await say('bot','FocusPact','<p>✅ <b>Оля підтвердила:</b> «Зараховано, красунчик!»</p>',{wait:1800});
+  }
+  win();
+}
+async function win(){
+  setStep(4);S.outcome='win';
+  const x0=S.xp,st0=S.streak;S.xp+=50;S.streak+=1;S.karma+=5;S.boss=Math.max(0,S.boss-8);S.mood='happy';
+  await say('bot','FocusPact',`<div class="card"><h4>Пакт виконано 🎉</h4>
+    <div class="row"><span>Досвід</span><span>${x0} → ${S.xp} XP</span></div>
+    <div class="bar"><i style="width:${Math.round(S.xp/S.xpNext*100)}%"></i></div>
+    <div class="row"><span>Серія днів</span><span>${st0} → ${S.streak} 🔥</span></div>
+    <div class="row"><span>Карма</span><span>+5 (${S.karma})</span></div>
+    <div class="row"><span>Бос тижня</span><span>−8 HP (лишилось ${S.boss})</span></div></div>
+    <p>Твій персонаж Фокусик радіє. Загін уже бачить результат.</p>`,{wait:700,kb:[
+      {t:'🙂 Відкрити профіль у Mini App',go:()=>show('app')},
+      {t:'💬 Що кажуть друзі',go:()=>show('group')}]});
+  await say('group','FocusPact',`<p>🎉 <b>Андрій виконав пакт!</b> «${esc(S.pact.task)}». Серія: ${S.streak} днів 🔥</p><p>⚔️ Бос тижня отримав удар: −8 HP, лишилось ${S.boss}.</p><div class="react"><span>🔥 3</span><span>👏 2</span></div>`,{wait:600});
+  await say('group','Макс','<p>Ну все, я теж сідаю за звіт 😤</p>',{wait:1500});
+  await say('group','Оля','<p>Легенда! Завтра я укладаю пакт на англійську</p>',{wait:1400});
+}
+async function fail(){
+  setStep(4);S.outcome='fail';
+  const st0=S.streak;S.streak=0;S.mood='sad';S.karma=Math.max(0,S.karma-3);
+  await say('bot','FocusPact',`<div class="card"><h4>Пакт не виконано 😔</h4>
+    <div class="row"><span>Серія днів</span><span>${st0} → 0</span></div>
+    <div class="row"><span>Карма</span><span>−3 (${S.karma})</span></div>
+    <div class="row"><span>Бос тижня</span><span>без удару, ${S.boss} HP</span></div></div>
+    <p>Фокусик сумує. Нічого страшного: головне почати знову завтра.</p>`,{wait:700,kb:[
+      {t:'🔁 Укласти новий пакт на завтра',go:retry},
+      {t:'❄️ Заморозити серію (FocusPact Pro)',go:freeze},
+      {t:'💬 Що кажуть друзі',go:()=>show('group')}]});
+  if(S.pact.shame){
+    await say('group','FocusPact',`<p>📉 <b>Екстрений випуск новин</b></p><p>Андрій обіцяв «${esc(S.pact.task.toLowerCase())}», але цього разу переміг TikTok. Рахунок 1:0 на користь стрічки. Серія ${st0} днів згоріла 🕯</p><div class="react"><span>😂 3</span><span>🫂 2</span></div>`,{wait:600});
+    await say('group','Оля','<p>Ахах, буває 😅 Завтра о 18:00 сідаємо разом?</p>',{wait:1500});
+    await say('group','Ігор','<p>Бос тижня сміється з нас. Завтра реванш!</p>',{wait:1400});
+  } else {
+    await say('group','FocusPact','<p>Андрій цього разу не встиг. Загін без удару по босу, але тиждень ще не закінчився 💪</p>',{wait:600});
+    await say('group','Оля','<p>Завтра о 18:00 сідаємо разом?</p>',{wait:1500});
+  }
+}
+async function freeze(){
+  me('bot','❄️ Заморозити серію');
+  await say('bot','FocusPact','<p><b>Заморожувач серії</b> входить у FocusPact Pro або коштує 25 ⭐ окремо. Серія збережеться, але звіт у чат усе одно піде: друзі мають знати 😉</p><p class="note">Демо: оплата не проводиться.</p>',{kb:[{t:'🔁 Краще укласти новий пакт на завтра',go:retry},{t:'🙂 Відкрити Mini App',go:()=>show('app')}]});
+}
+async function retry(){
+  me('bot','🔁 Новий пакт');
+  await say('bot','FocusPact','<p>Так тримати! Натисни «Почати спочатку» зліва, щоб пройти сценарій ще раз і спробувати інший результат. А поки загляни в Mini App або залиш відгук.</p>',{kb:[{t:'🙂 Mini App',go:()=>show('app')},{t:'📝 Залишити відгук',go:()=>show('fb')}]});
+}
+
+/* ---------- group history ---------- */
+function groupHistory(){
+  const c=$('#c-group');c.innerHTML='<div class="day">Вчора</div>';
+  addMsg('group',{from:'FocusPact',html:'<p>🎉 <b>Оля виконала пакт</b> «30 хв англійської». Серія: 12 днів 🔥</p><div class="react"><span>👏 3</span></div>'});
+  addMsg('group',{from:'FocusPact',html:'<p>⚔️ <b>Бос тижня «Прокрастинатор»</b>: 62 / 100 HP. До неділі лишилось 3 дні. Кожен виконаний пакт завдає 8 HP шкоди.</p>'});
+  c.insertAdjacentHTML('beforeend','<div class="day">Сьогодні</div>');
+  badge('group',false);
+}
+
+/* ---------- mini app ---------- */
+function critter(mood){
+  const mouth=mood==='sad'?'M34 58 Q44 50 54 58':mood==='happy'?'M32 52 Q44 66 56 52':'M34 55 Q44 60 54 55';
+  const body=mood==='sad'?'#8FA3B8':'var(--ember)';
+  const tear=mood==='sad'?'<ellipse cx="33" cy="46" rx="2.5" ry="4" fill="#7CC4FF"/>':'';
+  const spark=mood==='happy'?'<path d="M74 14 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#F6C343"/>':'';
+  return `<svg width="88" height="88" viewBox="0 0 88 88" role="img" aria-label="Персонаж Фокусик, настрій: ${mood==='sad'?'сумний':mood==='happy'?'радісний':'спокійний'}">
+    <path d="M44 6 C50 18 70 22 70 48 A26 26 0 0 1 18 48 C18 30 30 26 34 14 C38 22 42 20 44 6Z" style="fill:${body}"/>
+    <circle cx="35" cy="40" r="4" fill="#16202B"/><circle cx="53" cy="40" r="4" fill="#16202B"/>
+    <circle cx="36.3" cy="38.7" r="1.3" fill="#fff"/><circle cx="54.3" cy="38.7" r="1.3" fill="#fff"/>
+    <path d="${mouth}" stroke="#16202B" stroke-width="3" fill="none" stroke-linecap="round"/>${tear}${spark}</svg>`;
+}
+function renderApp(){
+  document.querySelectorAll('#appTabs button').forEach(b=>{b.setAttribute('aria-selected',b.dataset.t===S.tab);b.onclick=()=>{S.tab=b.dataset.t;renderApp()}});
+  const B=$('#appBody');
+  if(S.tab==='me'){
+    B.innerHTML=`<div class="panel"><div class="hero">${critter(S.mood)}<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div class="nm">Андрій</div><div class="note">Рівень ${S.level} · Фокусик ${S.mood==='sad'?'сумує':S.mood==='happy'?'радіє':'чекає на пакт'}</div>
+      <div class="bar"><i style="width:${Math.round(S.xp/S.xpNext*100)}%"></i></div><div class="note">${S.xp} / ${S.xpNext} XP до рівня ${S.level+1}</div></div></div>
+      <div class="stats"><div class="stat"><b>${S.streak}</b><small>днів серії 🔥</small></div><div class="stat"><b>${S.karma}</b><small>карма</small></div><div class="stat"><b>${S.outcome==='win'?24:23}</b><small>пактів виконано</small></div></div></div>
+      <div class="panel"><h3>Досягнення</h3><div class="list">
+      <div class="li"><span>🌅</span><span>Ранній птах: 5 пактів до 10:00</span><span class="chip ok">є</span></div>
+      <div class="li"><span>📚</span><span>Курсовий марафон: 10 пактів з навчання</span><span class="chip">7/10</span></div>
+      <div class="li"><span>🔥</span><span>Тиждень без зривів</span><span class="chip">${Math.min(S.streak,7)}/7</span></div></div></div>
+      ${S.outcome===null?'<p class="note">Пройди сценарій у вкладці «Бот», і тут зміняться XP, серія та настрій персонажа.</p>':''}`;
+  } else if(S.tab==='squad'){
+    const dealt=100-S.boss;
+    B.innerHTML=`<div class="panel"><h3>Бос тижня</h3><div class="hero"><div style="font-size:48px;line-height:1" aria-hidden="true">👾</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+      <div class="nm">Прокрастинатор</div><div class="bar hp"><i style="width:${S.boss}%"></i></div><div class="note">${S.boss} / 100 HP · до неділі 3 дні</div></div></div>
+      <p class="note">Кожен виконаний пакт завдає 8 HP. Переможете до неділі — кожен отримає скриню з нагородою від партнера.</p></div>
+      <div class="panel"><h3>Внесок загону «Нічні сови»</h3><div class="list">
+      <div class="li"><span class="pos">1</span><span>Оля</span><span>16 HP</span></div>
+      <div class="li you"><span class="pos">2</span><span>Андрій (ти)</span><span>${S.outcome==='win'?16:8} HP</span></div>
+      <div class="li"><span class="pos">3</span><span>Ігор</span><span>8 HP</span></div>
+      <div class="li"><span class="pos">4</span><span>Макс</span><span>${dealt-(S.outcome==='win'?40:32)} HP</span></div></div></div>`;
+  } else if(S.tab==='league'){
+    const rows=[['Оля',1240],['Андрій (ти)',S.outcome==='win'?1180:S.outcome==='fail'?1090:1130],['Софія',1150],['Ігор',980],['Макс',860],['Тарас',720]].sort((a,b)=>b[1]-a[1]);
+    B.innerHTML=`<div class="panel"><h3>Срібна ліга · тиждень 40</h3><div class="list">${rows.map((r,i)=>`<div class="li${r[0].includes('ти')?' you':''}"><span class="pos">${i+1}</span><span>${r[0]}</span><span>${r[1]} XP</span></div>`).join('')}</div>
+      <p class="note">Топ-3 у неділю переходять до Золотої ліги.</p></div>`;
+  } else {
+    const items=[['c1','Онлайн-школа англійської','−20% на місячний курс',30],['c2','Сервіс нотаток','1 місяць преміуму',60],['c3','Магазин спортхарчування','−15% на замовлення',40],['c4','Благодійний челендж','Спонсор донатить 50 грн за твої 5 пактів',0]];
+    B.innerHTML=`<div class="panel" style="flex-direction:row;justify-content:space-between;align-items:center"><span>Твоя карма</span><b style="font-family:var(--f-display);font-size:20px">${S.karma}</b></div>
+      <div class="shop">${items.map(([id,who,what,cost])=>`<div class="item"><span class="pt">${who}</span><b>${what}</b>
+      ${S.codes[id]?`<div class="code">${S.codes[id]}</div>`:`<button data-id="${id}" data-cost="${cost}" ${S.karma<cost?'disabled':''}>${cost?cost+' карми':'Долучитися'}</button>`}</div>`).join('')}</div>
+      <p class="note">Назви партнерів умовні. Промокоди в прототипі не справжні.</p>`;
+    B.querySelectorAll('.item button').forEach(b=>b.onclick=()=>{const c=+b.dataset.cost;S.karma-=c;S.codes[b.dataset.id]=c?'FOCUS-'+Math.random().toString(36).slice(2,7).toUpperCase():'Ти в челенджі ✓';renderApp()});
+  }
+}
+
+/* ---------- feedback ---------- */
+const QS=[
+  {k:'use',q:'Чи скористався б ти FocusPact для своїх справ?',o:['Так, точно','Можливо','Ні']},
+  {k:'best',q:'Що мотивує найбільше?',o:['Друзі бачать пакт','Доказ і перевірка','XP і серія днів','Бос і команда','Призи партнерів']},
+  {k:'shame',q:'Чи погодився б ти на жартівливі звіти про провал?',o:['Так, це підстьобує','Лише від близьких друзів','Ні, це неприємно']}
+];
+function renderFb(){
+  const B=$('#fbBody');
+  B.innerHTML=`<p class="note">Відповіді зберігаються лише в цьому браузері. Натисни «Скопіювати відповіді» і надішли їх автору прототипу.</p>`+
+    QS.map(x=>`<div class="q"><b>${x.q}</b><div class="opts">${x.o.map(o=>`<button type="button" data-k="${x.k}" aria-pressed="${S.fb[x.k]===o}">${o}</button>`).join('')}</div></div>`).join('')+
+    `<div class="q"><b>Що змінив би або додав?</b><textarea id="fbText" placeholder="Необов'язково">${esc(S.fb.text||'')}</textarea></div>
+     <button class="wide" id="fbCopy" type="button">Скопіювати відповіді</button><div class="sum" id="fbSum" hidden></div>`;
+  B.querySelectorAll('.opts button').forEach(b=>b.onclick=()=>{S.fb[b.dataset.k]=b.textContent;save();renderFb()});
+  $('#fbText').oninput=e=>{S.fb.text=e.target.value;save()};
+  $('#fbCopy').onclick=()=>{
+    const t=`FocusPact, відгук на прототип\nРезультат сценарію: ${S.outcome==='win'?'виконав пакт':S.outcome==='fail'?'провалив пакт':'не пройдено'}${S.pact?.sec?`, пакт за ${S.pact.sec} с`:''}\n`+QS.map(x=>`${x.q} ${S.fb[x.k]||'—'}`).join('\n')+(S.fb.text?`\nКоментар: ${S.fb.text}`:'');
+    const sum=$('#fbSum');sum.hidden=false;sum.textContent=t;
+    const done=()=>{$('#fbCopy').textContent='Скопійовано ✓'};
+    try{navigator.clipboard.writeText(t).then(done,()=>{selectText(sum)})}catch(e){selectText(sum)}
+  };
+}
+function selectText(el){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);$('#fbCopy').textContent='Виділено, скопіюй вручну'}
+function save(){try{localStorage.setItem('fp-fb',JSON.stringify(S.fb))}catch(e){}}
+function load(){try{return JSON.parse(localStorage.getItem('fp-fb')||'{}')||{}}catch(e){return{}}}
+
+/* ---------- boot ---------- */
+function boot(){
+  runId++;S=fresh();S.fb=load();
+  $('#c-bot').innerHTML='';input(false);
+  document.querySelector('.toast')?.remove();
+  groupHistory();show('bot');badge('group',false);
+  document.querySelectorAll('#steps li').forEach(li=>li.classList.remove('on','done'));
+  start();
+}
+$('#restart').onclick=boot;
+boot();
+})();
+</script>
+
+</body>
+</html>
